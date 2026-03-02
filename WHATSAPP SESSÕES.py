@@ -1,6 +1,6 @@
-# ==============================
-# SCRIPT 2 - WHATSAPP SESSÕES
-# ==============================
+# ==========================================
+# SCRIPT 2 - DOWNLOAD WHATSAPP SESSÕES
+# ==========================================
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException
 from datetime import datetime
 from pathlib import Path
 import time
@@ -17,6 +18,7 @@ import shutil
 
 options = Options()
 options.add_argument("--start-maximized")
+options.add_argument("--disable-blink-features=AutomationControlled")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
@@ -34,16 +36,20 @@ ambiente = "Concilig 3"
 usuario = "lucascavaguti"
 senha = "Trocar@11990"
 
-def aguardar_download(pasta, extensao):
+def aguardar_download(pasta, extensao, timeout=180):
     inicio = time.time()
-    while time.time() - inicio < 180:
+    while time.time() - inicio < timeout:
         arquivos = list(pasta.glob(f"*{extensao}"))
-        if arquivos:
+        parciais = list(pasta.glob("*.crdownload"))
+        if arquivos and not parciais:
             return max(arquivos, key=lambda f: f.stat().st_ctime)
         time.sleep(1)
-    raise Exception("Download não finalizou")
+    raise TimeoutException("Download não finalizou.")
 
 try:
+    print("🟢 Iniciando processo WhatsApp Sessões")
+
+    # LOGIN
     driver.get(url_login)
 
     WebDriverWait(driver, 60).until(
@@ -51,7 +57,7 @@ try:
     ).send_keys(ambiente)
 
     WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.XPATH, "//label[contains(text(),'Nome de usuário')]/following-sibling::input"))
+        EC.presence_of_element_located((By.XPATH, "//label[contains(text(),'Nome de usuário') or contains(text(),'Email')]/following-sibling::input"))
     ).send_keys(usuario)
 
     WebDriverWait(driver, 60).until(
@@ -62,13 +68,20 @@ try:
         EC.element_to_be_clickable((By.XPATH, "//div[normalize-space()='Entrar']"))
     ).click()
 
-    time.sleep(3)
+    WebDriverWait(driver, 30).until(EC.url_contains("robbu.global"))
 
     driver.get("https://inveniocenter.robbu.global/painel/faturamento")
 
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+
     linha = WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.XPATH, f"//tr[.//td[normalize-space(text())='{data_referencia}']]"))
+        EC.presence_of_element_located(
+            (By.XPATH, f"//tr[.//td[normalize-space(text())='{data_referencia}']]")
+        )
     )
+
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", linha)
+    time.sleep(1)
 
     linha.find_element(By.XPATH, ".//div[contains(@class,'dots')]").click()
 
@@ -86,15 +99,17 @@ try:
     pasta = Path(r"C:\Users\lucascavaguti\Downloads")
     arquivo_zip = aguardar_download(pasta, ".zip")
 
+    # Extração
     with zipfile.ZipFile(arquivo_zip, 'r') as zip_ref:
         zip_ref.extractall(pasta)
 
     arquivo_zip.unlink()
 
-    print("WhatsApp Sessões concluído.")
+    print("✅ WhatsApp Sessões concluído.")
 
 except Exception as e:
-    print("Erro:", e)
+    print("❌ Erro:", e)
 
 finally:
     driver.quit()
+    print("Navegador fechado.")
