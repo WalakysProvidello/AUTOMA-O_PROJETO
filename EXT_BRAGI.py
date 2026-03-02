@@ -83,11 +83,10 @@ driver.set_page_load_timeout(30)
 # LISTA DE SITES
 # ==========================================================
 sites = [
-    'https://ifood.noahomni.com.br/',
-    'https://banqi.noahomni.com.br/',
     'https://bvrodastradicional.noahomni.com.br/',
     'https://bvrodasrenegociados.noahomni.com.br/',
     'https://bvrodasbompagador.noahomni.com.br/',
+    'https://solagora.noahomni.com.br/',
     'https://bvrodaswo.noahomni.com.br/'
 ]
 
@@ -107,6 +106,7 @@ def get_credentials(url):
         "bvrodasrenegociados.noahomni.com.br",
         "bvrodasbompagador.noahomni.com.br",
         "bvrodaswo.noahomni.com.br",
+        "https://solagora.noahomni.com.br",
         "bvrodascontencioso.noahomni.com.br"
     ]):
         return "admin", "IoH@na@2026"
@@ -264,4 +264,5 @@ if falhas_login:
     print(f"log.txt gerado com {len(falhas_login)} falha(s).")
 
 driver.quit()
+
 print("Automação finalizada.")
