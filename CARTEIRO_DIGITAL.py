@@ -1,6 +1,6 @@
-# ==============================
-# SCRIPT 1 - CARTEIRO DIGITAL
-# ==============================
+# ==========================================
+# SCRIPT 1 - DOWNLOAD CARTEIRO DIGITAL
+# ==========================================
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -16,11 +16,12 @@ import time
 import shutil
 
 # ========================
-# CONFIG
+# CONFIGURAÇÃO CHROME
 # ========================
 
 options = Options()
 options.add_argument("--start-maximized")
+options.add_argument("--disable-blink-features=AutomationControlled")
 
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
@@ -46,16 +47,20 @@ ambiente = "Concilig 3"
 usuario = "lucascavaguti"
 senha = "Trocar@11990"
 
-def aguardar_download(pasta, extensao):
+def aguardar_download(pasta, extensao, timeout=180):
     inicio = time.time()
-    while time.time() - inicio < 180:
+    while time.time() - inicio < timeout:
         arquivos = list(pasta.glob(f"*{extensao}"))
-        if arquivos:
+        parciais = list(pasta.glob("*.crdownload"))
+        if arquivos and not parciais:
             return max(arquivos, key=lambda f: f.stat().st_ctime)
         time.sleep(1)
-    raise Exception("Download não finalizou")
+    raise TimeoutException("Download não finalizou.")
 
 try:
+    print("🔵 Iniciando processo Carteiro Digital")
+
+    # LOGIN
     driver.get(url_login)
 
     WebDriverWait(driver, 60).until(
@@ -63,7 +68,7 @@ try:
     ).send_keys(ambiente)
 
     WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.XPATH, "//label[contains(text(),'Nome de usuário')]/following-sibling::input"))
+        EC.presence_of_element_located((By.XPATH, "//label[contains(text(),'Nome de usuário') or contains(text(),'Email')]/following-sibling::input"))
     ).send_keys(usuario)
 
     WebDriverWait(driver, 60).until(
@@ -74,14 +79,24 @@ try:
         EC.element_to_be_clickable((By.XPATH, "//div[normalize-space()='Entrar']"))
     ).click()
 
-    time.sleep(3)
+    # Aguarda redirecionamento
+    WebDriverWait(driver, 30).until(EC.url_contains("robbu.global"))
 
-    # Ir para faturamento
+    # Vai direto para faturamento
     driver.get("https://inveniocenter.robbu.global/painel/faturamento")
 
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.TAG_NAME, "table")))
+
+    print("Tabela carregada.")
+
     linha = WebDriverWait(driver, 60).until(
-        EC.presence_of_element_located((By.XPATH, f"//tr[.//td[normalize-space(text())='{data_referencia}']]"))
+        EC.presence_of_element_located(
+            (By.XPATH, f"//tr[.//td[normalize-space(text())='{data_referencia}']]")
+        )
     )
+
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", linha)
+    time.sleep(1)
 
     linha.find_element(By.XPATH, ".//div[contains(@class,'dots')]").click()
 
@@ -102,10 +117,11 @@ try:
     destino = Path(fr"C:\Users\lucascavaguti\Desktop\CARTEIRO_{data_nome}.csv")
     shutil.move(str(arquivo), destino)
 
-    print("Carteiro Digital concluído.")
+    print("✅ Carteiro Digital concluído.")
 
 except Exception as e:
-    print("Erro:", e)
+    print("❌ Erro:", e)
 
 finally:
     driver.quit()
+    print("Navegador fechado.")
