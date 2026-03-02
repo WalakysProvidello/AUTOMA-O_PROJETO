@@ -1,5 +1,5 @@
 # ==========================================
-# SCRIPT 1 - DOWNLOAD CARTEIRO DIGITAL
+# SCRIPT 2 - DOWNLOAD WHATSAPP SESSÕES
 # ==========================================
 
 from selenium import webdriver
@@ -13,7 +13,7 @@ from selenium.common.exceptions import TimeoutException
 from datetime import datetime
 from pathlib import Path
 import time
-import shutil
+import zipfile
 
 # ========================
 # CONFIGURAÇÃO CHROME
@@ -57,7 +57,6 @@ mes = agora.month
 dia = agora.day
 
 data_referencia = f"01/{mes:02d}/{ano} 00:00"
-data_nome = f"{dia:02d}{mes:02d}"
 
 # ========================
 # LOGIN
@@ -69,9 +68,9 @@ usuario = "lucascavaguti"
 senha = "Trocar@11990"
 
 try:
-    print("🔵 Iniciando processo Carteiro Digital")
+    print("🟢 Iniciando processo WhatsApp Sessões")
 
-    # Acessa login
+    # Abre login
     driver.get(url_login)
     aguardar_pagina(driver)
 
@@ -91,7 +90,7 @@ try:
         EC.element_to_be_clickable((By.XPATH, "//div[normalize-space()='Entrar']"))
     ).click()
 
-    # Aguarda redirecionamento e carregamento total
+    # Aguarda redirecionamento
     wait.until(EC.url_contains("robbu.global"))
     aguardar_pagina(driver)
 
@@ -113,7 +112,7 @@ try:
 
     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", linha)
 
-    # Aguarda botão do menu ficar clicável
+    # Aguarda botão menu
     menu = wait.until(
         EC.element_to_be_clickable(
             (By.XPATH, f"//tr[.//td[normalize-space(text())='{data_referencia}']]//div[contains(@class,'dots')]")
@@ -127,14 +126,14 @@ try:
     ).click()
 
     # Aguarda modal abrir
-    modal = wait.until(
+    wait.until(
         EC.presence_of_element_located((By.XPATH, "//div[contains(@class,'modal-container')]"))
     )
 
-    # Aguarda botão Carteiro ficar clicável
+    # Aguarda botão WhatsApp ficar clicável
     botao = wait.until(
         EC.element_to_be_clickable(
-            (By.XPATH, "//div[normalize-space()='Analítico Carteiro Digital']/ancestor::a")
+            (By.XPATH, "//div[normalize-space()='Analítico WhatsApp Sessões']/ancestor::a")
         )
     )
 
@@ -145,12 +144,17 @@ try:
     # ========================
 
     pasta = Path(r"C:\Users\lucascavaguti\Downloads")
-    arquivo = aguardar_download(pasta, ".csv")
+    arquivo_zip = aguardar_download(pasta, ".zip")
 
-    destino = Path(fr"C:\Users\lucascavaguti\Desktop\CARTEIRO_{data_nome}.csv")
-    shutil.move(str(arquivo), destino)
+    print("📦 ZIP baixado:", arquivo_zip.name)
 
-    print("✅ Carteiro Digital concluído com sucesso.")
+    # Extração segura
+    with zipfile.ZipFile(arquivo_zip, 'r') as zip_ref:
+        zip_ref.extractall(pasta)
+
+    arquivo_zip.unlink()
+
+    print("✅ WhatsApp Sessões concluído com sucesso.")
 
 except Exception as e:
     print("❌ Erro:", e)
