@@ -87,7 +87,9 @@ sites = [
     'https://bvrodasrenegociados.noahomni.com.br/',
     'https://bvrodasbompagador.noahomni.com.br/',
     'https://solagora.noahomni.com.br/',
-    'https://bvrodaswo.noahomni.com.br/'
+    'https://bvrodaswo.noahomni.com.br/',
+    'https://banqi.noahomni.com.br',
+    'bvrodascontencioso.noahomni.com.br'
 ]
 
 # ==========================================================
@@ -96,17 +98,16 @@ sites = [
 def get_credentials(url):
 
     if any(chave in url for chave in [
-        "nubank.noahomni.com.br",
-        "banqi.noahomni.com.br"
+        "banqi.noahomni.com.br",
+        "solagora.noahomni.com.br"
     ]):
-        return "mis_reports", "alterar@123"
+        return "mis_reports", "Alterar@123"
 
     elif any(chave in url for chave in [
         "bvrodastradicional.noahomni.com.br",
         "bvrodasrenegociados.noahomni.com.br",
         "bvrodasbompagador.noahomni.com.br",
         "bvrodaswo.noahomni.com.br",
-        "https://solagora.noahomni.com.br",
         "bvrodascontencioso.noahomni.com.br"
     ]):
         return "admin", "IoH@na@2026"
